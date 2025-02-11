@@ -8,7 +8,7 @@ from drillsim.constants import *
 from drillsim.inputs import top_drive_input as top_drive_input
 
 
-def visualize_vel(time_arr, sol_arr, noe, p, path):
+def visualize_vel(time_arr, sol_arr, noe, p, path, fric_mod):
 
     subplot_titles = [
         "Axial Velocities (m/hr)",
@@ -46,15 +46,19 @@ def visualize_vel(time_arr, sol_arr, noe, p, path):
         mode="lines",
         name="Topdrive Axial Velocity (m/hr)",
     )
+
+    b_rpm = sol_arr[(noe - 1) * 4 + 3] * (30 / np.pi) 
+    t_rpm = store["RPM_topdrive"] * (30 / np.pi)
+
     bit_rpm = go.Scatter(
         x=time_arr,
-        y=sol_arr[(noe - 1) * 4 + 3] * (30 / np.pi),
+        y=b_rpm,
         name="Bit RPM",
         mode="lines",
     )
     topdrive_rpm = go.Scatter(
         x=time_arr,
-        y=store["RPM_topdrive"] * (30 / np.pi),
+        y=t_rpm,
         mode="lines",
         name="Topdrive RPM",
     )
@@ -68,9 +72,16 @@ def visualize_vel(time_arr, sol_arr, noe, p, path):
         * (1 / (4.45 * 12 * 0.0254))
     )
 
+    down_torque = (
+        -np.array(p[DOWNHOLE_TORQUE]) * (1 / (4.45 * 12 * 0.0254))
+    )
+
+    down_weight = (
+        -np.array(p[DOWNHOLE_WEIGHT]) * (1 / 4.45)
+    )
     downhole_weight = go.Scatter(
         x=p[SOLUTION_TIME],
-        y=-np.array(p[DOWNHOLE_WEIGHT]) * (1 / 4.45),
+        y=down_weight,
         mode="lines",
         name="Downhole Weight (lbf)",
     )
@@ -79,7 +90,7 @@ def visualize_vel(time_arr, sol_arr, noe, p, path):
     )
     downhole_torque = go.Scatter(
         x=p[SOLUTION_TIME],
-        y=-np.array(p[DOWNHOLE_TORQUE]) * (1 / (4.45 * 12 * 0.0254)),
+        y=down_torque,
         mode="lines",
         name="Downhole Torque (lbf-ft)",
     )
@@ -94,7 +105,7 @@ def visualize_vel(time_arr, sol_arr, noe, p, path):
     )
     bit_axial_depth = go.Scatter(
         x=time_arr,
-        y=sol_arr[(noe - 1) * 4 + 0],
+        y=sol_arr[-4] + p[DEPTH_QUERY],
         name="Bit Depth (m)",
         mode="lines",
     )
@@ -131,7 +142,7 @@ def visualize_vel(time_arr, sol_arr, noe, p, path):
     layout = {"yaxis6": {"autorange": "reversed"}}
     fig.update_layout(layout)
     fig.update_layout(title_text="Drilling Parameters")
-    fig.write_html(f"{path}/Outputs.html")
+    fig.write_html(f"{path}/Outputs-{fric_mod}.html")
 
 
 def visualize_mudmotor(time_arr, sol_arr, noe, p, path):

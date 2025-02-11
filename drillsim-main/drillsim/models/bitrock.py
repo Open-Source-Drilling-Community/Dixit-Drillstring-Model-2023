@@ -26,7 +26,7 @@ def bit_rock(z, theta, p):
     hole_depth_prev = p[HOLE_DEPTH_PREV][-1]
 
     del_theta = theta - theta_prev
-    bit_depth = z
+    bit_depth = z + p[DEPTH_QUERY]
     if bit_depth > hole_depth_prev:
         doc = bit_depth - hole_depth_prev
     else:
@@ -35,9 +35,9 @@ def bit_rock(z, theta, p):
         hole_depth = hole_depth_prev + doc * (del_theta / (2 * np.pi))
     else:
         hole_depth = hole_depth_prev
-    theta_prev = theta
+    # theta_prev = theta
 
-    p[THETA_PREV].append(theta_prev)
+    p[THETA_PREV].append(theta)
     p[HOLE_DEPTH_PREV].append(hole_depth)
 
     return doc

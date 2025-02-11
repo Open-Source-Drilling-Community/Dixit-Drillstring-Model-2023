@@ -12,7 +12,7 @@ from drillsim.visualize import visualize_mudmotor as visualize_mudmotor
 import pickle
 
 
-def main_driver(input_path, output_path):
+def main_driver(input_path, output_path, fric_mod, save_pickle=bool):
     vals_dict, df_dict = initialize_driver(input_path)
     df = addons_BHA(df_dict["BHA_specs"], vals_dict)
     assembly_dict = assembler_main(df_dict, vals_dict)
@@ -43,16 +43,17 @@ def main_driver(input_path, output_path):
     final_dict[FRICTION_FORCE_STORE] = []
     final_dict[FRICTION_TORQUE_STORE] = []
     final_dict[STATIC_CHECK_PREV_STORE] = []
+    final_dict['new_force'] = []
 
     sol = solve_ivp(
-        lambda t, x: Main_Func(t, x, final_dict),
+        lambda t, x: Main_Func(t, x, final_dict, fric_mod),
         [0, int(final_dict[RUN_TIME])],
         np.zeros(4 * final_dict[NOE]),
         max_step=0.001,
         rtol=1,
         atol=1,
         method="RK45",
-        dense_output=True,
+        dense_output=False,
     )
 
     time_arr = sol.t
@@ -61,9 +62,11 @@ def main_driver(input_path, output_path):
     final_dict[SOLUTION_MAIN_ARRAY] = sol_arr
 
     # Store important data
-    visualize_vel(time_arr, sol_arr, noe, final_dict, output_path)
+    visualize_vel(time_arr, sol_arr, noe, final_dict, output_path, fric_mod)
     if final_dict[MOTOR_INDEX] != "N":
-        visualize_mudmotor(time_arr, sol_arr, noe, final_dict, output_path)
-    with open(f"{output_path}/Output.pickle", "wb") as handle:
-        pickle.dump(final_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            visualize_mudmotor(time_arr, sol_arr, noe, final_dict, output_path)
+    
+    if save_pickle == True:
+        with open(f"{output_path}/Output.pickle", "wb") as handle:
+            pickle.dump(final_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
     return None

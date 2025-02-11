@@ -1,12 +1,13 @@
 from drillsim.constants import *
 from drillsim.inputs import top_drive_input as top_drive_input
-from drillsim.models.friction import Friction_imp as Friction_imp
+from drillsim.models.friction import Friction_imp as Friction_stribeck
+from drillsim.models.coulomb import Friction_coulomb
 from drillsim.models.bitrock import bit_rock as bit_rock
 import numpy as np
 import scipy
 
 
-def Main_Func(t, x, p):
+def Main_Func(t, x, p, fric_mod):
 
     """
     This function has the lumped spring mass damper dynamic equations in axial and torsional directions
@@ -66,13 +67,19 @@ def Main_Func(t, x, p):
     Forcing_F[-1] = -k_WOB * doc  # - c_bit_axial * v[-1] * abs(np.sign(doc))
     Forcing_T[-1] = -k_TQ * doc
 
-    Friction_force, Friction_torque, p[STATIC_CHECK_PREV] = Friction_imp(
-        z, v, theta, omega, Forcing_F, Forcing_T, p[STATIC_CHECK_PREV], p
-    )
+    if fric_mod == "stribeck":
+        Friction_force, Friction_torque, p[STATIC_CHECK_PREV], new_fric_force = Friction_stribeck(
+            z, v, theta, omega, Forcing_F, Forcing_T, p[STATIC_CHECK_PREV], p
+        )
+    elif fric_mod == "coulomb":
+        Friction_force, Friction_torque, p[STATIC_CHECK_PREV], new_fric_force = Friction_coulomb(
+            z, v, theta, omega, Forcing_F, Forcing_T, p[STATIC_CHECK_PREV], p
+        )
 
     # store weight , torque , depth of cut and solution time
     # TODO: Dense outputs needn't require storing solution time
 
+    p['new_force'].append(new_fric_force[-1])
     p[DOWNHOLE_WEIGHT].append(Forcing_F[-1])
     p[DOWNHOLE_TORQUE].append(Forcing_T[-1])
     p[DOC].append(doc)

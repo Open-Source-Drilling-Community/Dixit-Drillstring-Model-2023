@@ -109,8 +109,18 @@ def collar_inputs(df1, p):
         COLLAR_TOT_INERTIA_ABV = df_temp[df_temp["dummy"] == 0][
             "moment_of_inertia"
         ].sum()
-        COLLAR_K_AXIAL_ABV = 1 / (np.sum(1 / df_temp[df_temp["dummy"] == 0]["ka"]))
-        COLLAR_K_TORSIONAL_ABV = 1 / (np.sum(1 / df_temp[df_temp["dummy"] == 0]["kt"]))
+
+        # dummy1 = df_temp[df_temp["dummy"] == 0]["ka"]
+        # dummy2 = df_temp[df_temp["dummy"] == 0]["kt"]
+        # COLLAR_K_AXIAL_ABV = np.divide(1, np.sum(1/dummy1), where=(dummy1.empty == False))
+        # COLLAR_K_TORSIONAL_ABV = np.divide(1, np.sum(1/dummy2), where=(dummy2.empty == False))
+        COLLAR_K_AXIAL_ABV = 0 if df_temp[df_temp["dummy"] == 0]["ka"].empty else 1 / (np.sum(1 / df_temp[df_temp["dummy"] == 0]["ka"]))
+        COLLAR_K_TORSIONAL_ABV = 0 if df_temp[df_temp["dummy"] == 0]["kt"].empty else 1 / (np.sum(1 / df_temp[df_temp["dummy"] == 0]["kt"]))
+
+
+        # COLLAR_K_AXIAL_ABV = 1 / (np.sum(1 / df_temp[df_temp["dummy"] == 0]["ka"]))
+        # COLLAR_K_TORSIONAL_ABV = 1 / (np.sum(1 / df_temp[df_temp["dummy"] == 0]["kt"]))
+
         N_COLLAR_ABV, L_COLLAR_ABV = nearestLength(COLLAR_TOT_LEN_ABV, p[ELEM_LENGTH])
         print("checkpoint", COLLAR_TOT_LEN_ABV)
         N_COLLAR_ABV = int(N_COLLAR_ABV)
@@ -179,6 +189,8 @@ def collar_inputs(df1, p):
         COLLAR_MASS_ARRAY = np.concatenate(
             [COLLAR_MASS_ARRAY_ABV, COLLAR_MASS_ARRAY_MOTOR, COLLAR_MASS_ARRAY_BELOW]
         )
+        print(COLLAR_MASS_ARRAY)
+        print(COLLAR_MASS_ARRAY_MOTOR)
         COLLAR_INERTIA_ARRAY = np.concatenate(
             [
                 COLLAR_INERTIA_ARRAY_ABV,
@@ -272,6 +284,8 @@ def assembler_main(df_dict, p):
     global_ka_array = np.concatenate([DP_KA_ARRAY, HWDP_KA_ARRAY, COLLAR_KA_ARRAY])
     global_kt_array = np.concatenate([DP_KT_ARRAY, HWDP_KT_ARRAY, COLLAR_KT_ARRAY])
 
+    # global_ct_array = np.divide(p[CT_BOREHOLE], global_length_array, where=global_length_array != 0)
+    # global_ca_array = np.divide(p[CA_BOREHOLE], global_length_array, where=global_length_array != 0)
     global_ct_array = np.where(
         global_length_array == 0,
         0,
@@ -282,7 +296,6 @@ def assembler_main(df_dict, p):
         0,
         p[CA_BOREHOLE] / global_length_array,
     )
-
     global_mass_matrix = np.diag(global_mass_array)
     global_mass_inv_array = 1 / global_mass_array
     global_inertia_inv_array = 1 / global_inertia_array
